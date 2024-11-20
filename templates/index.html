@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Display</title>
+    <style>
+        body { 
+            font-family: 'Arial', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f0f8ff; 
+            color: #333; 
+        }
+
+        /* Chat Container */
+        .chat-container { 
+            max-width: 600px; 
+            margin: auto; 
+            padding: 20px; 
+            background-color: #ffffff;
+            color: #000000;
+            /* background: linear-gradient(145deg, #e6f7ff, #b3d9ff);  */
+            border-radius: 15px; 
+            height: 80vh; 
+            overflow-y: scroll; 
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            font-size: 16px;
+            margin-top: 20px;
+            z-index: 1;
+        }
+
+        /* Message Styles */
+        .message { 
+            margin-bottom: 15px; 
+            padding: 12px 20px; 
+            border-radius: 10px; 
+            max-width: 80%; 
+            word-wrap: break-word; 
+            box-sizing: border-box; 
+            background-color: #f8f9fa;
+            color: #000000;
+            box-shadow: none;
+            border: 1px solid #e0e0e0 ;
+            opacity: 1;
+        }
+
+        .message:hover {
+            transform: scale(1.02);
+        }
+
+        .sender { 
+            background-color: #b3e6b3; 
+            text-align: left; 
+            margin-right: auto; 
+            border-radius: 12px;
+        }
+
+        .receiver { 
+            background-color: #f0f8ff; 
+            text-align: right; 
+            margin-left: auto; 
+            border-radius: 12px;
+        }
+
+        /* Sender & Receiver Name */
+        .sender-name, .message-time { 
+            font-weight: bold; 
+            font-size: 14px; 
+            color: #555; 
+        }
+
+        .message-time { 
+            font-size: 12px; 
+            color: #888;
+        }
+
+        /* Message Text */
+        .message-text { 
+            margin-top: 8px; 
+            font-size: 16px;
+            color: #444;
+        }
+
+        /* Date Label */
+        .date-label { 
+            text-align: center; 
+            font-size: 18px; 
+            font-weight: bold; 
+            color: #000000;
+            margin: 20px 0; 
+            padding: 5px;
+            /* background-color: #e6f7ff; */
+            border-radius: 10px;
+        }
+
+        /* Buttons */
+        .upload-btn{ 
+            margin: 10px; 
+            padding: 10px 25px; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            margin-left: 380px;
+        }
+
+        .download-btn{
+            margin: 10px; 
+            padding: 10px 25px; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            margin-top: 30px;
+            margin-left: 410px;
+        }
+
+        .upload-btn:hover, .download-btn:hover { 
+            background-color: #0056b3; 
+        }
+
+        .upload-btn:active, .download-btn:active {
+            background-color: #004080;
+        }
+
+        /* Scrollbar Styling */
+        .chat-container::-webkit-scrollbar { 
+            width: 8px; 
+        }
+
+        .chat-container::-webkit-scrollbar-thumb { 
+            background-color: #007bff; 
+            border-radius: 10px; 
+        }
+
+        /* Add animations for smoother transitions */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .message {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container" id="chat"></div>
+    <button class="upload-btn" id="uploadBtn">Upload Chat File</button>
+    <button class="download-btn" id="downloadBtn">Download as PDF</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>    
+
+    <script>
+        // Function to render messages from JSON
+        function renderMessages(messages) {
+            const chatContainer = document.getElementById('chat');
+            let lastSender = '';
+            let lastDate = ''; // Track the last date to check if a new date is encountered
+
+            messages.forEach((msg) => {
+                const messageDiv = document.createElement('div');
+                const senderNameDiv = document.createElement('div');
+                const messageBoxDiv = document.createElement('div');
+                const messageTextDiv = document.createElement('div');
+                const messageTimeDiv = document.createElement('div');
+                const dateLabelDiv = document.createElement('div');
+
+                const [date, time] = msg.time.split(', '); // Split the date and time
+
+                // Add date label if it's a new date
+                if (date !== lastDate) {
+                    lastDate = date; // Update the last date
+                    dateLabelDiv.classList.add('date-label');
+                    dateLabelDiv.textContent = date; // Set the date text
+                    chatContainer.appendChild(dateLabelDiv); // Add date label to the container
+                }
+
+                messageDiv.classList.add('message');
+                messageBoxDiv.classList.add('message-box');
+                messageTextDiv.classList.add('message-text');
+                messageTimeDiv.classList.add('message-time');
+
+                messageTextDiv.textContent = msg.message; // Set message text
+                messageTimeDiv.textContent = time; // Set the time under the message box
+
+                if (msg.sender !== lastSender) {
+                    senderNameDiv.classList.add('sender-name');
+                    senderNameDiv.textContent = msg.sender;
+                    lastSender = msg.sender;
+                    messageDiv.appendChild(senderNameDiv);
+                }
+
+                messageBoxDiv.appendChild(messageTextDiv);
+                messageBoxDiv.appendChild(messageTimeDiv); // Append the time under the message
+                messageDiv.appendChild(messageBoxDiv);
+
+                // Position messages on the left or right
+                if (msg.sender === 'Thejesh VEC') {
+                    messageDiv.classList.add('sender');
+                } else {
+                    messageDiv.classList.add('receiver');
+                }
+
+                chatContainer.appendChild(messageDiv);
+            });
+        }
+
+        // Handle file upload and processing
+        document.getElementById('uploadBtn').addEventListener('click', function() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.txt';
+            fileInput.click();
+
+            fileInput.onchange = function(event) {
+                const file = event.target.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.messages) {
+                        renderMessages(data.messages); // Display messages in the chat container
+                    } else {
+                        alert('Failed to load messages.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error uploading file:', error);
+                });
+            };
+        });
+
+        // Function to download the chat as PDF using jsPDF
+        document.getElementById('downloadBtn').addEventListener('click', function () {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4'); // Portrait, millimeters, A4 size
+
+  const chatContainer = document.getElementById('chat');
+  const originalHeight = chatContainer.style.height;
+  const originalOverflow = chatContainer.style.overflow;
+
+  // Temporarily expand the chat container for rendering
+  chatContainer.style.height = 'auto';
+  chatContainer.style.overflow = 'visible';
+
+  // Ensure proper background color and visibility
+  chatContainer.style.backgroundColor = '#ffffff';
+
+  // Render with moderate scaling and CORS
+  html2canvas(chatContainer, { scale: 2, useCORS: true }).then((canvas) => {
+    const imgData = canvas.toDataURL('image/jpeg', 0.8); // Compress image with JPEG
+    const imgWidth = 190; // A4 width in mm (210mm with 10mm margins)
+    const pageHeight = 297; // A4 height in mm
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let position = 10; // Initial Y position
+    let heightLeft = imgHeight;
+
+    // Add the first page
+    doc.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    // Add subsequent pages for overflow
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      doc.addPage();
+      doc.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    // Restore the chat container's original styles
+    chatContainer.style.height = originalHeight;
+    chatContainer.style.overflow = originalOverflow;
+
+    // Save the PDF
+    doc.save('chat.pdf');
+  }).catch((error) => {
+    console.error('Error generating PDF:', error);
+  });
+
+
+            // Restore chat container styles
+            chatContainer.style.height = originalHeight;
+            chatContainer.style.overflow = originalOverflow;
+        });
+    </script>
+</body>
+</html>
